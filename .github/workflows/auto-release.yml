@@ -31,7 +31,15 @@
 name: auto-release
 
 on:
-  workflow_call: {}
+  workflow_call:
+    outputs:
+      tag:
+        description: >-
+          The tag that was created (empty when no releasable commits landed).
+          Lets callers chain tag-driven jobs (e.g. release-go) off this
+          workflow, since tags pushed with GITHUB_TOKEN never fire their own
+          `push: tags` triggers.
+        value: ${{ jobs.tag.outputs.tag }}
 
 permissions:
   contents: write       # push tags and create the GitHub Release
@@ -50,6 +58,8 @@ jobs:
   tag:
     name: Tag
     runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.decide.outputs.tag }}
     steps:
       - name: Checkout
         uses: actions/checkout@v7

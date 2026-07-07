@@ -17,7 +17,7 @@ Requires (already set on this repo): Settings → Actions → General → Access
 | `ci-python.yml` | ruff check + format, pytest if tests exist | ARC (`runs-on` input) |
 | `gitleaks.yml` | secret scan (full history) | ARC (`runs-on` input) |
 | `auto-release.yml` | git-cliff tag + GitHub Release on push to main | `ubuntu-latest` |
-| `release-go.yml` | GoReleaser on `v*` tag | `ubuntu-latest` |
+| `release-go.yml` | GoReleaser artifacts for a tag (chained or `v*` push) | `ubuntu-latest` |
 
 CI/gitleaks workflows take a required `runs-on` input because ARC runner
 scale sets are per-repo (`arc-runner-set-amd64-<repo>`, defined in the
@@ -64,19 +64,35 @@ jobs:
       pull-requests: read
 ```
 
-`.github/workflows/release.yml` (Go repos with a `.goreleaser.yaml`):
+Go repos with a `.goreleaser.yaml` chain GoReleaser off auto-release in the
+SAME caller (a separate `push: tags` workflow would never fire -- tags pushed
+with `GITHUB_TOKEN` don't trigger other workflows):
 
 ```yaml
-name: Release
+name: Auto-release
 on:
   push:
-    tags: ['v*']
+    branches: [main]
 jobs:
   release:
+    uses: teemow/github-workflows/.github/workflows/auto-release.yml@main
+    permissions:
+      contents: write
+      pull-requests: read
+  goreleaser:
+    needs: release
+    if: needs.release.outputs.tag != ''
     uses: teemow/github-workflows/.github/workflows/release-go.yml@main
+    with:
+      tag: ${{ needs.release.outputs.tag }}
     permissions:
       contents: write
 ```
+
+`release-go.yml` also takes a `working-directory` input for repos whose Go
+module lives in a subdirectory (e.g. minecraft-mods' `mcctl/`). GoReleaser's
+release mode defaults to keep-existing, so it attaches artifacts to the
+release auto-release created without clobbering the git-cliff notes.
 
 ## cliff.toml
 
