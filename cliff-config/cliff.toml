@@ -1,8 +1,11 @@
 # Canonical git-cliff config for the auto-release flow (adapted from Giant
 # Swarm's devctl template).
 #
-# Copy this file into each repo's root and replace REPO_NAME with the repo
-# name -- git-cliff needs the exact coordinates for its GitHub API PR lookups.
+# This file lives ONLY here and is staged by the cliff-config composite
+# action at run time -- repos do not carry a copy. It is fully generic: the
+# GitHub coordinates for the API PR lookups come from the GITHUB_REPO env
+# var (set to ${{ github.repository }} by auto-release.yml), which also
+# populates the remote.github.* template variables below.
 #
 # A single git-cliff invocation in the auto-release workflow runs
 # `--unreleased --bump --context` to compute the next semver from conventional
@@ -98,12 +101,9 @@ commit_parsers = [
   { message = "^style",    skip = true },
 ]
 
-# GitHub repo coordinates -- required for the API lookups that populate
-# `commit.remote.pr_number` and `commit.remote.username` in the template
-# below. The token is passed automatically via the workflow's GITHUB_TOKEN.
-[remote.github]
-owner = "teemow"
-repo = "REPO_NAME"
+# No [remote.github] section on purpose: owner/repo come from the
+# GITHUB_REPO env var so this one file serves every repo unchanged. The
+# token for the API lookups is GITHUB_TOKEN, also from the environment.
 
 # Template for the rendered release notes. Body is what gets posted to the
 # GitHub Release; header and footer are empty so the release page shows only
