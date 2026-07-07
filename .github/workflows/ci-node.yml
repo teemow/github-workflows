@@ -1,0 +1,50 @@
+# Reusable Node/TypeScript CI. Runs lint / typecheck / test / build via npm
+# scripts; missing scripts are skipped (--if-present), so repos only need to
+# define what they have.
+name: ci-node
+
+on:
+  workflow_call:
+    inputs:
+      runs-on:
+        description: Runner label (per-repo ARC scale set)
+        required: true
+        type: string
+      working-directory:
+        description: Directory containing package.json
+        required: false
+        type: string
+        default: "."
+      node-version:
+        required: false
+        type: string
+        default: "lts/*"
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    name: node
+    runs-on: ${{ inputs.runs-on }}
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: npm
+          cache-dependency-path: ${{ inputs.working-directory }}/package-lock.json
+
+      - run: npm ci
+
+      - run: npm run lint --if-present
+
+      - run: npm run typecheck --if-present
+
+      - run: npm test --if-present
+
+      - run: npm run build --if-present

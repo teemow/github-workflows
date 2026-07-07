@@ -1,0 +1,45 @@
+# Reusable Python CI: ruff check + format, pytest if tests exist.
+name: ci-python
+
+on:
+  workflow_call:
+    inputs:
+      runs-on:
+        description: Runner label (per-repo ARC scale set)
+        required: true
+        type: string
+      python-version:
+        required: false
+        type: string
+        default: "3.x"
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    name: python
+    runs-on: ${{ inputs.runs-on }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: ${{ inputs.python-version }}
+
+      - run: pip install ruff
+
+      - run: ruff check .
+
+      - run: ruff format --check .
+
+      - name: pytest (if tests exist)
+        run: |
+          set -euo pipefail
+          if [ -d tests ] || ls test_*.py >/dev/null 2>&1; then
+            [ -f requirements.txt ] && pip install -r requirements.txt
+            pip install pytest
+            pytest
+          else
+            echo "No tests found; skipping pytest."
+          fi

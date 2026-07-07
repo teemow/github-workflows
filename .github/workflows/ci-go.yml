@@ -1,0 +1,59 @@
+# Reusable Go CI. Call from a repo's ci workflow:
+#
+#   jobs:
+#     ci:
+#       uses: teemow/github-workflows/.github/workflows/ci-go.yml@main
+#       with:
+#         runs-on: arc-runner-set-amd64-<repo>
+#
+# One job on purpose: each job costs one ARC pod (scale-from-zero), so
+# fewer jobs = faster and less cluster load.
+name: ci-go
+
+on:
+  workflow_call:
+    inputs:
+      runs-on:
+        description: Runner label (per-repo ARC scale set)
+        required: true
+        type: string
+      working-directory:
+        description: Directory containing go.mod
+        required: false
+        type: string
+        default: "."
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    name: go
+    runs-on: ${{ inputs.runs-on }}
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: ${{ inputs.working-directory }}/go.mod
+          cache-dependency-path: ${{ inputs.working-directory }}/go.sum
+
+      - name: go mod tidy drift check
+        run: go mod tidy -diff
+
+      - name: go vet
+        run: go vet ./...
+
+      - name: go build
+        run: go build ./...
+
+      - name: go test
+        run: go test -race ./...
+
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v9
+        with:
+          working-directory: ${{ inputs.working-directory }}

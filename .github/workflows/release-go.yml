@@ -1,0 +1,45 @@
+# Reusable GoReleaser release on a v* tag. Call from a repo's release
+# workflow:
+#
+#   on:
+#     push:
+#       tags: ['v*']
+#   permissions:
+#     contents: write
+#   jobs:
+#     release:
+#       uses: teemow/github-workflows/.github/workflows/release-go.yml@main
+#
+# Runs on GitHub-hosted ubuntu-latest -- GoReleaser cross-compiles, needs no
+# repo-specific runner, and shouldn't wait for a cold ARC pod.
+name: release-go
+
+on:
+  workflow_call: {}
+
+permissions:
+  contents: write
+
+jobs:
+  goreleaser:
+    name: Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+
+      - name: Run GoReleaser
+        uses: goreleaser/goreleaser-action@v7
+        with:
+          distribution: goreleaser
+          version: latest
+          args: release --clean
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

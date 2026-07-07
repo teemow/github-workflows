@@ -1,0 +1,42 @@
+# Reusable gitleaks scan. Callers must trigger on BOTH pull_request and
+# push to main -- the push trigger closes the direct-push gap (a secret
+# pushed straight to main would otherwise never be scanned):
+#
+#   on:
+#     pull_request:
+#     push:
+#       branches: [main]
+#   jobs:
+#     gitleaks:
+#       uses: teemow/github-workflows/.github/workflows/gitleaks.yml@main
+#       with:
+#         runs-on: arc-runner-set-amd64-<repo>
+name: gitleaks
+
+on:
+  workflow_call:
+    inputs:
+      runs-on:
+        description: Runner label (per-repo ARC scale set)
+        required: true
+        type: string
+
+jobs:
+  gitleaks:
+    name: gitleaks
+    runs-on: ${{ inputs.runs-on }}
+    permissions:
+      contents: read
+      # gitleaks-action queries PR commits / posts a summary comment on
+      # pull_request events; without this it 403s ("not accessible by integration").
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v3
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Artifact storage quota is exhausted account-wide; the SARIF upload
+          # would fail the job even when the scan is clean. Skip the upload.
+          GITLEAKS_ENABLE_UPLOAD_ARTIFACT: false
