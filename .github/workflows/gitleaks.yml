@@ -6,11 +6,19 @@
 #     pull_request:
 #     push:
 #       branches: [main]
+#   permissions:
+#     contents: read
+#     pull-requests: write
 #   jobs:
 #     gitleaks:
 #       uses: teemow/github-workflows/.github/workflows/gitleaks.yml@main
 #       with:
 #         runs-on: arc-runner-set-amd64-<repo>
+#
+# The caller MUST carry that permissions block: a called workflow's job can
+# never exceed what the caller grants, and the repo default for GITHUB_TOKEN
+# is read-only, so without it the pull-requests:write below is unsatisfiable
+# and the whole workflow fails at startup (startup_failure, no jobs run).
 name: gitleaks
 
 on:

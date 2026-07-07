@@ -41,6 +41,15 @@ jobs:
           go-version-file: ${{ inputs.working-directory }}/go.mod
           cache-dependency-path: ${{ inputs.working-directory }}/go.sum
 
+      # The ARC runner image ships no C compiler, so Go silently disables
+      # cgo and `go test -race` errors out ("-race requires cgo").
+      - name: Install C toolchain for -race
+        run: |
+          if ! command -v gcc >/dev/null; then
+            sudo apt-get -qq update
+            sudo apt-get -qq install -y --no-install-recommends gcc libc6-dev
+          fi
+
       - name: go mod tidy drift check
         run: go mod tidy -diff
 
