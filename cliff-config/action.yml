@@ -1,0 +1,11 @@
+name: cliff-config
+description: >
+  Stages the canonical git-cliff config bundled with this repo into
+  $RUNNER_TEMP/cliff.toml. Repos carry NO cliff.toml of their own -- the
+  config is generic (repo coordinates come from the GITHUB_REPO env var at
+  invocation time), so changing it here changes every repo's next release.
+runs:
+  using: composite
+  steps:
+    - run: cp "${{ github.action_path }}/cliff.toml" "$RUNNER_TEMP/cliff.toml"
+      shell: bash

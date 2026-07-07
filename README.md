@@ -80,11 +80,13 @@ jobs:
 
 ## cliff.toml
 
-`auto-release.yml` needs a `cliff.toml` in the calling repo's root. Copy the
-canonical one from this repo and replace `REPO_NAME` with the repo name
-(git-cliff uses the coordinates for GitHub PR lookups in release notes).
-Releases only happen on conventional commits (`feat:` / `fix:` / breaking);
-other commits produce no release, by design.
+The git-cliff config lives ONLY here (`cliff-config/cliff.toml`); calling
+repos carry no copy. `auto-release.yml` stages it via the `cliff-config`
+composite action and injects the repo coordinates through the `GITHUB_REPO`
+env var, so release behavior (bump rules, commit grouping, notes template)
+is tuned centrally for every repo at once. Releases only happen on
+conventional commits (`feat:` / `fix:` / breaking); other commits produce
+no release, by design.
 
 ## Notes
 
