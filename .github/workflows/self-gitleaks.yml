@@ -1,0 +1,15 @@
+# The reusable gitleaks.yml is workflow_call-only; this caller scans THIS
+# repo's PRs and pushes with it, like every other repo in the estate.
+name: gitleaks
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+  pull-requests: write
+jobs:
+  gitleaks:
+    uses: teemow/github-workflows/.github/workflows/gitleaks.yml@main
+    with:
+      runs-on: ubuntu-latest
