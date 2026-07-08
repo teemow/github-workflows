@@ -22,6 +22,13 @@ on:
         required: false
         type: string
         default: "."
+      apt-packages:
+        description: >-
+          Extra apt packages (space-separated) required by cgo builds,
+          e.g. libasound2-dev for repos linking ALSA via rtmidi.
+        required: false
+        type: string
+        default: ""
 
 permissions:
   contents: read
@@ -43,11 +50,14 @@ jobs:
 
       # The ARC runner image ships no C compiler, so Go silently disables
       # cgo and `go test -race` errors out ("-race requires cgo").
+      # apt-packages adds repo-specific cgo build deps (e.g. libasound2-dev).
       - name: Install C toolchain for -race
+        env:
+          APT_PACKAGES: ${{ inputs.apt-packages }}
         run: |
-          if ! command -v gcc >/dev/null; then
+          if ! command -v gcc >/dev/null || [ -n "$APT_PACKAGES" ]; then
             sudo apt-get -qq update
-            sudo apt-get -qq install -y --no-install-recommends gcc libc6-dev
+            sudo apt-get -qq install -y --no-install-recommends gcc libc6-dev $APT_PACKAGES
           fi
 
       - name: go mod tidy drift check
