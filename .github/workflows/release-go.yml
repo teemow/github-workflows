@@ -6,6 +6,7 @@
 #       tags: ['v*']
 #   permissions:
 #     contents: write
+#     id-token: write
 #   jobs:
 #     release:
 #       uses: teemow/github-workflows/.github/workflows/release-go.yml@main
@@ -24,6 +25,26 @@
 #       uses: teemow/github-workflows/.github/workflows/release-go.yml@main
 #       with:
 #         tag: ${{ needs.release.outputs.tag }}
+#       permissions:
+#         contents: write
+#         id-token: write
+#
+# Every release asset is signed with cosign, keyless: the job's OIDC token
+# (hence id-token: write, which callers must grant too) identifies this
+# workflow to Fulcio, and GoReleaser publishes a Sigstore bundle next to
+# each asset when the repo's .goreleaser.yaml has a `signs` entry such as
+#
+#   signs:
+#     - cmd: cosign
+#       signature: '${artifact}.bundle'
+#       args: ['sign-blob', '--yes', '--bundle=${signature}', '${artifact}']
+#       artifacts: all
+#
+# The certificate then carries this workflow as the subject
+# (https://github.com/teemow/github-workflows/.github/workflows/release-go.yml@refs/heads/main),
+# https://token.actions.githubusercontent.com as the issuer, and the calling
+# repository as the source repository -- which is what a self-updating CLI
+# pins when it verifies a download.
 #
 # Runs on GitHub-hosted ubuntu-latest -- GoReleaser cross-compiles, needs no
 # repo-specific runner, and shouldn't wait for a cold ARC pod.
@@ -48,6 +69,7 @@ on:
 
 permissions:
   contents: write
+  id-token: write # keyless cosign signing of the release assets
 
 jobs:
   goreleaser:
@@ -68,6 +90,9 @@ jobs:
         with:
           go-version-file: ${{ inputs.working-directory }}/go.mod
           cache-dependency-path: ${{ inputs.working-directory }}/go.sum
+
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v4
 
       # GoReleaser resolves the version from the tag reachable at HEAD; when
       # chained, HEAD is the tagged commit checked out above. keep-existing
