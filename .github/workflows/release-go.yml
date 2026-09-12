@@ -92,7 +92,7 @@ jobs:
           cache-dependency-path: ${{ inputs.working-directory }}/go.sum
 
       - name: Install cosign
-        uses: sigstore/cosign-installer@v4
+        uses: sigstore/cosign-installer@v4.1.2 # no floating major tag exists
 
       # GoReleaser resolves the version from the tag reachable at HEAD; when
       # chained, HEAD is the tagged commit checked out above. keep-existing
