@@ -85,8 +85,9 @@ commit_preprocessors = [
 # security -> Security.
 #
 # `style` is the only type marked skip.
-# Bump decision is unaffected by these group names: git-cliff only bumps on
-# feat / fix / breaking regardless.
+# Bump decision is unaffected by these group names: every conventional commit
+# that is not skipped bumps at least the patch version (a lone `docs:` or `ci:`
+# commit still releases), `feat` bumps minor and a breaking change major.
 commit_parsers = [
   { message = "^feat",     group = "Added" },
   { message = "^fix",      group = "Fixed" },
