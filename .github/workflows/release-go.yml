@@ -29,10 +29,10 @@
 #         contents: write
 #         id-token: write
 #
-# Every release asset is signed with cosign, keyless: the job's OIDC token
-# (hence id-token: write, which callers must grant too) identifies this
-# workflow to Fulcio, and GoReleaser publishes a Sigstore bundle next to
-# each asset when the repo's .goreleaser.yaml has a `signs` entry such as
+# Release assets can be signed with cosign, keyless: the job's OIDC token
+# identifies this workflow to Fulcio, and GoReleaser publishes a Sigstore
+# bundle next to each asset when the repo's .goreleaser.yaml has a `signs`
+# entry such as
 #
 #   signs:
 #     - cmd: cosign
@@ -45,6 +45,16 @@
 # https://token.actions.githubusercontent.com as the issuer, and the calling
 # repository as the source repository -- which is what a self-updating CLI
 # pins when it verifies a download.
+#
+# PERMISSIONS: this workflow declares none of its own, so its job inherits
+# the caller's grants. Callers grant `contents: write` (always, to upload
+# the assets) and `id-token: write` only when their .goreleaser.yaml signs.
+# Declaring `id-token: write` here would make GitHub refuse the run at
+# startup for every caller that does not grant it -- a called workflow's
+# declared scopes must all be granted by the caller -- which is exactly
+# what broke the releases of fluxforward, minecraft-mods and selfboot on
+# 2026-09-14. Signing is opt-in per repo: a private repo has no business
+# in the public Rekor transparency log.
 #
 # Runs on GitHub-hosted ubuntu-latest -- GoReleaser cross-compiles, needs no
 # repo-specific runner, and shouldn't wait for a cold ARC pod.
@@ -66,10 +76,6 @@ on:
         required: false
         type: string
         default: "."
-
-permissions:
-  contents: write
-  id-token: write # keyless cosign signing of the release assets
 
 jobs:
   goreleaser:
