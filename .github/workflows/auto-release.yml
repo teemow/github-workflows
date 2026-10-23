@@ -30,12 +30,20 @@
 # bad releases is the pre-merge CI on the feature PRs that landed these
 # commits -- once they're on the branch, they ship.
 #
-# Runs on GitHub-hosted ubuntu-latest: it needs no repo toolchain and
-# shouldn't wait for a cold ARC pod.
+# Runs on GitHub-hosted ubuntu-latest by default: it needs no repo toolchain.
+# A private repo with an ARC scale set passes `runs-on:
+# arc-runner-set-amd64-<repo>` to save the billed minute per push (one cold
+# pod start, ~30 s); gh is installed when the runner image lacks it.
 name: auto-release
 
 on:
   workflow_call:
+    inputs:
+      runs-on:
+        description: Runner label (ubuntu-latest, or the repo's ARC scale set)
+        required: false
+        type: string
+        default: ubuntu-latest
     outputs:
       tag:
         description: >-
@@ -61,7 +69,7 @@ concurrency:
 jobs:
   tag:
     name: Tag
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runs-on }}
     outputs:
       tag: ${{ steps.decide.outputs.tag }}
     steps:
@@ -82,6 +90,17 @@ jobs:
           download_url: 'https://github.com/orhun/git-cliff/releases/download/v${version}/git-cliff-${version}-x86_64-unknown-linux-gnu.tar.gz'
           tarball_binary_path: 'git-cliff-${version}/git-cliff'
           smoke_test: '${binary} --version'
+
+      # GitHub-hosted runners ship gh; the stock ARC runner image does not.
+      - name: Install gh
+        run: |
+          if ! command -v gh >/dev/null; then
+            ver=2.103.1
+            mkdir -p "$RUNNER_TEMP/gh"
+            curl -sSfL "https://github.com/cli/cli/releases/download/v${ver}/gh_${ver}_linux_amd64.tar.gz" \
+              | tar -xz -C "$RUNNER_TEMP/gh" --strip-components=2 "gh_${ver}_linux_amd64/bin/gh"
+            echo "$RUNNER_TEMP/gh" >> "$GITHUB_PATH"
+          fi
 
       # Stages the canonical cliff.toml from this repo into $RUNNER_TEMP.
       # The checkout above holds the CALLING repo, so the config has to
