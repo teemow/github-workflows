@@ -102,6 +102,10 @@ jobs:
         with:
           go-version-file: ${{ inputs.working-directory }}/go.mod
           cache-dependency-path: ${{ inputs.working-directory }}/go.sum
+          # The GitHub Actions cache downloads at well under 1 MB/s into
+          # spidertron (fluxforward: 858 MiB in 24 min); modules straight from
+          # the Go proxy are faster there, so ARC runners skip it.
+          cache: ${{ inputs.runs-on == 'ubuntu-latest' }}
 
       # cosign-installer runs envsubst (gettext-base): GitHub-hosted runners
       # ship it, the stock ARC runner image does not.
