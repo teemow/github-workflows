@@ -17,7 +17,7 @@ Requires (already set on this repo): Settings → Actions → General → Access
 | `ci-python.yml` | ruff check + format, pytest if tests exist | ARC (`runs-on` input) |
 | `gitleaks.yml` | secret scan (full history) | ARC (`runs-on` input) |
 | `auto-release.yml` | git-cliff tag + GitHub Release on push to main | `ubuntu-latest`, or ARC (optional `runs-on` input) |
-| `release-go.yml` | GoReleaser artifacts for a tag (chained or `v*` push) | `ubuntu-latest` |
+| `release-go.yml` | GoReleaser artifacts for a tag (chained or `v*` push) | `ubuntu-latest`, or ARC (optional `runs-on` input) |
 
 CI/gitleaks workflows take a required `runs-on` input because ARC runner
 scale sets are per-repo (`arc-runner-set-amd64-<repo>`, defined in the
