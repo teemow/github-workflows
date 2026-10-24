@@ -56,8 +56,9 @@
 # 2026-09-14. Signing is opt-in per repo: a private repo has no business
 # in the public Rekor transparency log.
 #
-# Runs on GitHub-hosted ubuntu-latest -- GoReleaser cross-compiles, needs no
-# repo-specific runner, and shouldn't wait for a cold ARC pod.
+# Runs on GitHub-hosted ubuntu-latest by default -- GoReleaser cross-compiles
+# and needs no repo-specific runner. A private repo with an ARC scale set
+# passes `runs-on: arc-runner-set-amd64-<repo>` to avoid billed minutes.
 name: release-go
 
 on:
@@ -76,11 +77,16 @@ on:
         required: false
         type: string
         default: "."
+      runs-on:
+        description: Runner label (ubuntu-latest, or the repo's ARC scale set)
+        required: false
+        type: string
+        default: ubuntu-latest
 
 jobs:
   goreleaser:
     name: Release
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runs-on }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
