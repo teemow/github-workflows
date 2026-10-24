@@ -103,6 +103,15 @@ jobs:
           go-version-file: ${{ inputs.working-directory }}/go.mod
           cache-dependency-path: ${{ inputs.working-directory }}/go.sum
 
+      # cosign-installer runs envsubst (gettext-base): GitHub-hosted runners
+      # ship it, the stock ARC runner image does not.
+      - name: Install envsubst
+        run: |
+          if ! command -v envsubst >/dev/null; then
+            sudo apt-get -qq update
+            sudo apt-get -qq install -y --no-install-recommends gettext-base
+          fi
+
       - name: Install cosign
         uses: sigstore/cosign-installer@v4.1.2 # no floating major tag exists
 
