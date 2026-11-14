@@ -34,7 +34,9 @@ on:
         description: >-
           Extra flags for `go test -race`, e.g. "-timeout 20m" for a repo
           whose slowest package outgrows go test's default of 10 minutes
-          per package under the race detector.
+          per package under the race detector. Split on whitespace with
+          no shell quoting: `-run "A|B"` passes the quotes literally,
+          matches no test and passes green, so write `-run=A|B`.
         required: false
         type: string
         default: ""
