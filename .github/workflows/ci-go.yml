@@ -5,6 +5,7 @@
 #       uses: teemow/github-workflows/.github/workflows/ci-go.yml@main
 #       with:
 #         runs-on: arc-runner-set-amd64-<repo>
+#         go-test-flags: -timeout 20m   # optional
 #
 # One job on purpose: each job costs one ARC pod (scale-from-zero), so
 # fewer jobs = faster and less cluster load.
@@ -26,6 +27,14 @@ on:
         description: >-
           Extra apt packages (space-separated) required by cgo builds,
           e.g. libasound2-dev for repos linking ALSA via rtmidi.
+        required: false
+        type: string
+        default: ""
+      go-test-flags:
+        description: >-
+          Extra flags for `go test -race`, e.g. "-timeout 20m" for a repo
+          whose slowest package outgrows go test's default of 10 minutes
+          per package under the race detector.
         required: false
         type: string
         default: ""
@@ -70,7 +79,9 @@ jobs:
         run: go build ./...
 
       - name: go test
-        run: go test -race ./...
+        env:
+          GO_TEST_FLAGS: ${{ inputs.go-test-flags }}
+        run: go test -race $GO_TEST_FLAGS ./...
 
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v9
